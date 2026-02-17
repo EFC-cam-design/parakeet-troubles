@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Portfolio Consolidator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   CSS CUSTOM PROPERTIES
+   ======================================== */
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d2e;
+  --surface2: #252840;
+  --surface3: #2e3352;
+  --border: #2d3150;
+  --border2: #3a3f6b;
+  --accent: #6c63ff;
+  --accent-dim: rgba(108,99,255,0.12);
+  --accent-hover: #5a52e0;
+  --accent2: #4ecdc4;
+  --accent2-dim: rgba(78,205,196,0.12);
+  --text: #e8eaf6;
+  --text2: #8892b0;
+  --text3: #5c6480;
+  --urgent: #ff6b6b;
+  --tier1: #ffa726;
+  --tier2: #66bb6a;
+  --parking: #78909c;
+  --success: #4caf50;
+  --success-dim: rgba(76,175,80,0.12);
+  --warning: #ff9800;
+  --warning-dim: rgba(255,152,0,0.12);
+  --error: #f44336;
+  --error-dim: rgba(244,67,54,0.12);
+  --info-dim: rgba(108,99,255,0.1);
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+
+/* ========================================
+   RESET & BASE
+   ======================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========================================
+   SCROLLBARS
+   ======================================== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ========================================
+   LOADING OVERLAY
+   ======================================== */
+#loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,17,23,0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+#loading-overlay.show { display: flex; }
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loading-msg {
+  color: var(--text2);
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+/* ========================================
+   APP HEADER
+   ======================================== */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.app-logo-mark {
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.app-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+.app-title em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+/* ========================================
+   WIZARD STEP NAV
+   ======================================== */
+.wizard-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 4px 0;
+  flex: 1;
+  justify-content: flex-end;
+  scrollbar-width: none;
+}
+.wizard-nav::-webkit-scrollbar { display: none; }
+
+.wizard-step-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  position: relative;
+}
+.wizard-step-btn:hover:not(:disabled) { color: var(--text2); background: var(--surface2); }
+.wizard-step-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(108,99,255,0.25);
+}
+.wizard-step-btn.completed { color: var(--accent2); }
+.wizard-step-btn:disabled { opacity: 0.35; cursor: default; }
+
+.step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.wizard-step-btn.active .step-num {
+  background: var(--accent);
+  color: white;
+}
+.wizard-step-btn.completed .step-num {
+  background: var(--accent2);
+  color: #0f1117;
+}
+
+.step-divider {
+  color: var(--border2);
+  font-size: 14px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ========================================
+   MAIN LAYOUT
+   ======================================== */
+.main-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 36px 24px 80px;
+}
+
+/* ========================================
+   STEP PANELS
+   ======================================== */
+.step-panel { display: none; }
+.step-panel.active { display: block; }
+
+/* ========================================
+   STEP HEADER
+   ======================================== */
+.step-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.step-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.6px;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+.step-desc {
+  color: var(--text2);
+  font-size: 14px;
+  line-height: 1.65;
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+
+/* ========================================
+   ALERT BANNERS
+   ======================================== */
+.alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.alert-icon { flex-shrink: 0; margin-top: 1px; }
+.alert-info  { background: var(--info-dim);    border: 1px solid rgba(108,99,255,0.2);  }
+.alert-warn  { background: var(--warning-dim); border: 1px solid rgba(255,152,0,0.2);   }
+.alert-error { background: var(--error-dim);   border: 1px solid rgba(244,67,54,0.2);   }
+.alert-ok    { background: var(--success-dim); border: 1px solid rgba(76,175,80,0.2);   }
+.alert b { font-weight: 600; }
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+  line-height: 1;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-primary  { background: var(--accent);   color: white; }
+.btn-primary:not(:disabled):hover  { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(108,99,255,0.35); }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:not(:disabled):hover { border-color: var(--border2); color: var(--text); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-danger {
+  background: var(--error-dim);
+  color: var(--error);
+  border: 1px solid rgba(244,67,54,0.25);
+}
+.btn-danger:not(:disabled):hover { background: rgba(244,67,54,0.2); }
+
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-xs { padding: 4px 9px; font-size: 11px; border-radius: 4px; }
+
+/* ========================================
+   STEP 1: UPLOAD
+   ======================================== */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 64px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+}
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.upload-zone-icon { font-size: 52px; margin-bottom: 18px; opacity: 0.65; display: block; }
+.upload-zone-title { font-size: 19px; font-weight: 600; margin-bottom: 7px; }
+.upload-zone-sub { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+
+#file-input { display: none; }
+
+.upload-success-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--success-dim);
+  border: 1px solid rgba(76,175,80,0.25);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 24px;
+}
+.upload-success-bar .icon { font-size: 20px; }
+.upload-success-bar .info strong { display: block; font-size: 14px; font-weight: 600; color: var(--success); }
+.upload-success-bar .info small { color: var(--text2); font-size: 12px; }
+.upload-success-bar .actions { margin-left: auto; }
+
+/* ========================================
+   TAB SUMMARY CARDS
+   ======================================== */
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.sheet-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.sheet-card:hover { border-color: var(--border2); }
+
+.sheet-card-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sheet-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent2);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.sheet-stats {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.sheet-stat { text-align: right; }
+.sheet-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.sheet-stat-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.sheet-card-body { padding: 10px 16px 12px; }
+
+.col-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.col-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+}
+.col-tag-more {
+  color: var(--accent);
+  border-color: rgba(108,99,255,0.3);
+  background: var(--accent-dim);
+  cursor: default;
+}
+
+.sample-table {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  overflow: hidden;
+}
+.sample-table-row {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sample-table-row:last-child { border-bottom: none; }
+.sample-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.sample-cell.hdr { color: var(--accent2); font-weight: 700; }
+
+/* ========================================
+   STEP 2: MAPPING
+   ======================================== */
+.mapping-stack { display: flex; flex-direction: column; gap: 12px; }
+
+.mapping-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.mapping-card.assigned { border-color: rgba(108,99,255,0.45); }
+.mapping-card.skipped  { opacity: 0.45; }
+
+.mapping-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  flex-wrap: wrap;
+}
+
+.mcard-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent2);
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mcard-meta {
+  font-size: 11px;
+  color: var(--text3);
+  flex: 1;
+}
+
+select.role-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  outline: none;
+  min-width: 200px;
+}
+select.role-select:focus { border-color: var(--accent); }
+select.role-select option { background: #252840; }
+
+.col-map-grid {
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--border);
+}
+.col-map-grid.visible { display: grid; }
+
+.col-map-field { display: flex; flex-direction: column; gap: 4px; }
+
+.col-map-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text3);
+}
+.col-map-label.required::after { content: ' *'; color: var(--urgent); }
+
+select.col-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  outline: none;
+  width: 100%;
+}
+select.col-select:focus { border-color: var(--accent); }
+select.col-select option { background: #252840; }
+
+.auto-hint {
+  font-size: 10px;
+  color: var(--accent2);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ========================================
+   STEP FOOTER NAV
+   ======================================== */
+.step-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 44px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.step-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.validation-hint {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ========================================
+   PLACEHOLDER PANELS (steps 3–8)
+   ======================================== */
+.placeholder-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 72px 48px;
+  text-align: center;
+}
+.placeholder-icon { font-size: 56px; opacity: 0.35; display: block; margin-bottom: 20px; }
+.placeholder-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; }
+.placeholder-body {
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.65;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* ========================================
+   SECTION HEADINGS
+   ======================================== */
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.section-heading h3 { font-size: 15px; font-weight: 600; }
+.section-heading .count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ========================================
+   DIVIDER
+   ======================================== */
+hr.sep {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 28px 0;
+}
+
+/* ========================================
+   UTILITIES
+   ======================================== */
+.flex  { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8  { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.mt-8   { margin-top: 8px; }
+.mt-16  { margin-top: 16px; }
+.mt-24  { margin-top: 24px; }
+.mb-4   { margin-bottom: 4px; }
+.mb-8   { margin-bottom: 8px; }
+.mb-16  { margin-bottom: 16px; }
+.text-muted { color: var(--text2); }
+.text-accent { color: var(--accent); }
+.text-mono  { font-family: 'JetBrains Mono', monospace; }
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 700px) {
+  .app-header { padding: 0 14px; }
+  .wizard-nav { display: none; }
+  .main-wrap { padding: 20px 14px 60px; }
+  .upload-zone { padding: 44px 20px; }
+  .sheet-grid { grid-template-columns: 1fr; }
+  .mapping-card-header { flex-direction: column; align-items: flex-start; }
+  select.role-select { min-width: auto; width: 100%; }
+  .placeholder-panel { padding: 48px 24px; }
+  .step-footer { flex-direction: column; align-items: stretch; }
+  .step-footer-right { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====================================================
+     LOADING OVERLAY
+     ==================================================== -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-msg">Processing…</p>
+</div>
+
+<!-- ====================================================
+     APP HEADER
+     ==================================================== -->
+<header class="app-header">
+  <div class="app-logo">
+    <div class="app-logo-mark">📊</div>
+    <div class="app-title">Portfolio <em>Consolidator</em></div>
+  </div>
+  <nav class="wizard-nav" id="wizard-nav"></nav>
+</header>
+
+<!-- ====================================================
+     MAIN CONTENT
+     ==================================================== -->
+<main class="main-wrap">
+
+  <!-- ======================== STEP 1: UPLOAD ======================== -->
+  <section class="step-panel active" id="step-1">
+    <div class="step-eyebrow">Step 1 of 8 &mdash; Upload</div>
+    <h1 class="step-title">Upload Your Workbook</h1>
+    <p class="step-desc">
+      Upload your Excel file (.xlsx or .xls). The app detects all sheets and column headers
+      automatically. Your data never leaves the browser — all processing is local.
+    </p>
+
+    <!-- Drop zone (hidden after upload) -->
+    <div id="upload-area">
+      <div class="upload-zone" id="drop-zone">
+        <span class="upload-zone-icon">📂</span>
+        <div class="upload-zone-title">Drop your Excel workbook here</div>
+        <p class="upload-zone-sub">Supports .xlsx, .xls, and .csv &nbsp;·&nbsp; Up to 50 MB</p>
+        <button class="btn btn-primary" type="button" onclick="document.getElementById('file-input').click()">
+          Browse Files
+        </button>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+      </div>
+    </div>
+
+    <!-- Upload result (shown after upload) -->
+    <div id="upload-result" style="display:none;">
+      <div class="upload-success-bar">
+        <span class="icon">✅</span>
+        <div class="info">
+          <strong id="result-filename">file.xlsx</strong>
+          <small id="result-summary">Detected N sheets</small>
+        </div>
+        <div class="actions">
+          <button class="btn btn-sm btn-ghost" type="button" onclick="resetUpload()">Replace File</button>
+        </div>
+      </div>
+
+      <div class="section-heading">
+        <h3>Detected Sheets</h3>
+        <span class="count" id="sheet-count-lbl"></span>
+      </div>
+      <div class="sheet-grid" id="sheet-grid"></div>
+    </div>
+
+    <div class="step-footer">
+      <div></div>
+      <div class="step-footer-right">
+        <button class="btn btn-primary" id="step1-next" disabled
+                onclick="goToStep(2)">
+          Continue to Column Mapping &rarr;
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== STEP 2: MAP ======================== -->
+  <section class="step-panel" id="step-2">
+    <div class="step-eyebrow">Step 2 of 8 &mdash; Map</div>
+    <h1 class="step-title">Assign Tab Roles &amp; Map Columns</h1>
+    <p class="step-desc">
+      Tell the app what each sheet contains, then confirm which column holds project names
+      and map the key fields for each role. Smart defaults are pre-selected based on
+      column name matching.
+    </p>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">ℹ️</span>
+      <div>
+        Assign at least one tab as <b>Project Index</b>. Other roles are optional but
+        improve consolidation accuracy. Set unused tabs to <b>Skip</b>.
+      </div>
+    </div>
+
+    <div class="mapping-stack" id="mapping-stack">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="step-footer">
+      <button class="btn btn-secondary" onclick="goToStep(1)">&larr; Back</button>
+      <div class="step-footer-right">
+        <span class="validation-hint" id="map-validation-hint"></span>
+        <button class="btn btn-primary" id="step2-next" disabled
+                onclick="goToStep(3)">
+          Continue to Name Matching &rarr;
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== STEP 3: MATCH ======================== -->
+  <section class="step-panel" id="step-3">
+    <div class="step-eyebrow">Step 3 of 8 &mdash; Match</div>
+    <h1 class="step-title">Resolve Project Name Conflicts</h1>
+    <p class="step-desc">
+      Project names often differ slightly across sheets. Review auto-detected matches,
+      confirm likely matches, and resolve unmatched names before consolidation.
+    </p>
+    <div class="placeholder-panel">
+      <span class="placeholder-icon">🔗</span>
+      <div class="placeholder-title">Name Matching Engine</div>
+      <p class="placeholder-body">
+        Coming in Phase 2. This step will extract all project names from mapped tabs,
+        run fuzzy-matching (Levenshtein + substring + abbreviation expansion), and
+        let you resolve conflicts before proceeding.
+      </p>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-secondary" onclick="goToStep(2)">&larr; Back</button>
+      <div class="step-footer-right">
+        <button class="btn btn-primary" onclick="goToStep(4)">Continue to Configure &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== STEP 4: CONFIGURE ======================== -->
+  <section class="step-panel" id="step-4">
+    <div class="step-eyebrow">Step 4 of 8 &mdash; Configure</div>
+    <h1 class="step-title">Configure Workflow Rules</h1>
+    <p class="step-desc">
+      Define how the app calculates cascade dates, classifies priority tiers, and interprets
+      ambiguous values in your data. All rules are exportable as JSON for reuse.
+    </p>
+    <div class="placeholder-panel">
+      <span class="placeholder-icon">⚙️</span>
+      <div class="placeholder-title">Rule Builder</div>
+      <p class="placeholder-body">
+        Coming in Phase 3. Configure date offset rules, tier classification criteria,
+        date parsing behavior (Q1/Q2, year-only, TBD handling), location formatting,
+        and output column order.
+      </p>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-secondary" onclick="goToStep(3)">&larr; Back</button>
+      <div class="step-footer-right">
+        <button class="btn btn-primary" onclick="goToStep(5)">Continue to Calculate &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== STEP 5: CALCULATE ======================== -->
+  <section class="step-panel" id="step-5">
+    <div class="step-eyebrow">Step 5 of 8 &mdash; Calculate</div>
+    <h1 class="step-title">Run Consolidation</h1>
+    <p class="step-desc">
+      The engine merges all your data sources using your configured rules and produces
+      a unified dataset with calculated dates and tier assignments.
+    </p>
+    <div class="placeholder-panel">
+      <span class="placeholder-icon">⚡</span>
+      <div class="placeholder-title">Consolidation Engine</div>
+      <p class="placeholder-body">
+        Coming in Phase 4. This step merges all project data, calculates cascade dates
+        from your offset rules, assigns tier classifications, and flags conflicts or
+        missing required fields.
+      </p>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-secondary" onclick="goToStep(4)">&larr; Back</button>
+      <div class="step-footer-right">
+        <button class="btn btn-primary" onclick="goToStep(6)">Continue to Review &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== STEP 6: REVIEW ======================== -->
+  <section class="step-panel" id="step-6">
+    <div class="step-eyebrow">Step 6 of 8 &mdash; Review</div>
+    <h1 class="step-title">Review &amp; Correct</h1>
+    <p class="step-desc">
+      Inspect the consolidated dataset, make inline corrections, and re-run calculations
+      with your edits preserved.
+    </p>
+    <div class="placeholder-panel">
+      <span class="placeholder-icon">📋</span>
+      <div class="placeholder-title">Editable Data Table</div>
+      <p class="placeholder-body">
+        Coming in Phase 4. Sort, filter, and inline-edit the consolidated project data.
+        Issues are flagged with contextual links. User edits are tracked separately and
+        survive recalculations.
+      </p>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-secondary" onclick="goToStep(5)">&larr; Back</button>
+      <div class="step-footer-right">
+        <button class="btn btn-primary" onclick="goToStep(7)">Continue to Dashboard &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== STEP 7: DASHBOARD ======================== -->
+  <section class="step-panel" id="step-7">
+    <div class="step-eyebrow">Step 7 of 8 &mdash; Dashboard</div>
+    <h1 class="step-title">Interactive Dashboard</h1>
+    <p class="step-desc">
+      Explore your prioritized project portfolio by state, county, and tier.
+      Filter, search, and drill into individual projects.
+    </p>
+    <div class="placeholder-panel">
+      <span class="placeholder-icon">📊</span>
+      <div class="placeholder-title">Portfolio Dashboard</div>
+      <p class="placeholder-body">
+        Coming in Phase 5. State &rarr; County &rarr; Project hierarchy with tier
+        color-coding, date grids, progress indicators, and urgency warnings.
+        Renders live from consolidated data; also exportable as a standalone HTML file.
+      </p>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-secondary" onclick="goToStep(6)">&larr; Back</button>
+      <div class="step-footer-right">
+        <button class="btn btn-primary" onclick="goToStep(8)">Continue to Export &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== STEP 8: EXPORT ======================== -->
+  <section class="step-panel" id="step-8">
+    <div class="step-eyebrow">Step 8 of 8 &mdash; Export</div>
+    <h1 class="step-title">Export Results</h1>
+    <p class="step-desc">
+      Download your consolidated data in multiple formats. Everything is generated
+      client-side — nothing is uploaded to any server.
+    </p>
+    <div class="placeholder-panel">
+      <span class="placeholder-icon">📦</span>
+      <div class="placeholder-title">Export Options</div>
+      <p class="placeholder-body">
+        Coming in Phase 5. Export as Master Spreadsheet (.xlsx), Timeline Spreadsheet
+        (.xlsx), Standalone Dashboard (.html), Outlook Calendar (.ics), or Configuration
+        (.json) for future reuse.
+      </p>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-secondary" onclick="goToStep(7)">&larr; Back</button>
+      <div class="step-footer-right">
+        <small class="text-muted">All exports generated client-side — nothing leaves your browser.</small>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ================================================================
+   APPLICATION STATE
+   ================================================================ */
+var APP = {
+  workbook:         null,
+  fileName:         '',
+  sheetData:        {},   // sheetName -> { headers, rows }
+  tabMappings:      {},   // sheetName -> { role, columns }
+  nameMap:          {},
+  excludedProjects: [],
+  config: {
+    dateRules:          [],
+    tierRules:          {},
+    dateParsingRules:   {},
+    locationFormat:     'city_state_zip',
+    outputColumns:      [],
+    qualifyingStatuses: []
+  },
+  results: {
+    projects: [],
+    issues:   [],
+    stats:    {}
+  },
+  userEdits:      {},
+  currentStep:    1,
+  completedSteps: []
+};
+
+/* ================================================================
+   STEP METADATA
+   ================================================================ */
+var STEPS = [
+  { num: 1, label: 'Upload'    },
+  { num: 2, label: 'Map'       },
+  { num: 3, label: 'Match'     },
+  { num: 4, label: 'Configure' },
+  { num: 5, label: 'Calculate' },
+  { num: 6, label: 'Review'    },
+  { num: 7, label: 'Dashboard' },
+  { num: 8, label: 'Export'    }
+];
+
+/* ================================================================
+   TAB ROLES & FIELD DEFINITIONS
+   ================================================================ */
+var TAB_ROLES = [
+  { value: '',               label: '— Assign Role —'          },
+  { value: 'index',          label: 'Project Index'            },
+  { value: 'development',    label: 'Development'              },
+  { value: 'product',        label: 'Product / Origination'    },
+  { value: 'existing',       label: 'Existing Work / Impact'   },
+  { value: 'data_mapping',   label: 'Data Mapping'             },
+  { value: 'output_template',label: 'Output Template'          },
+  { value: 'skip',           label: 'Skip (ignore this tab)'   }
+];
+
+// Fields per role: { key, label, required, hints[] }
+var ROLE_FIELDS = {
+  index: [
+    { key: 'projectName',     label: 'Project Name',      required: true,  hints: ['project name','reactivate project name','project','name','site name'] },
+    { key: 'state',           label: 'State',             required: false, hints: ['state'] },
+    { key: 'county',          label: 'County',            required: false, hints: ['county'] },
+    { key: 'lat',             label: 'Latitude',          required: false, hints: ['lat','latitude'] },
+    { key: 'lon',             label: 'Longitude',         required: false, hints: ['lon','long','longitude'] },
+    { key: 'address',         label: 'Street Address',    required: false, hints: ['address','street address','street'] },
+    { key: 'city',            label: 'City',              required: false, hints: ['city'] },
+    { key: 'zip',             label: 'ZIP / Postal Code', required: false, hints: ['zip','postal','zip code','postal code'] },
+    { key: 'mwDC',            label: 'MW (DC)',            required: false, hints: ['mw dc','mwdc','dc capacity','dc mw','nameplate capacity'] },
+    { key: 'mwAC',            label: 'MW (AC)',            required: false, hints: ['mw ac','mwac','ac capacity','ac mw'] },
+    { key: 'stage',           label: 'Project Stage',     required: false, hints: ['stage','project stage','status','project status'] },
+    { key: 'hearingDate',     label: 'Hearing Date',      required: false, hints: ['hearing date','hearing','bod hearing'] },
+    { key: 'lmi',             label: 'LMI Flag',          required: false, hints: ['lmi','low-moderate income','low moderate income'] },
+    { key: 'energyCommunity', label: 'Energy Community',  required: false, hints: ['energy community','ec','ec flag','energy community flag'] }
+  ],
+  development: [
+    { key: 'projectName',  label: 'Project Name',     required: true,  hints: ['project name','reactivate project name','project','name','site name'] },
+    { key: 'state',        label: 'State',            required: false, hints: ['state'] },
+    { key: 'devLead',      label: 'Dev Lead',         required: false, hints: ['dev lead','developer','lead','assigned to','owner','assigned'] },
+    { key: 'priority',     label: 'Priority Rating',  required: false, hints: ['priority','priority rating','rank','tier','priority tier'] },
+    { key: 'permitStatus', label: 'Permit Status',    required: false, hints: ['permit status','permit','permitting status','permitting'] }
+  ],
+  product: [
+    { key: 'projectName',    label: 'Project Name',         required: true,  hints: ['project name','reactivate project name','project','name','site name'] },
+    { key: 'program',        label: 'Program Name',         required: false, hints: ['program','program name','program type','program category'] },
+    { key: 'submissionDate', label: 'Submission Date',      required: false, hints: ['submission date','submission','submit date','due date','deadline','application deadline'] },
+    { key: 'impactReqs',     label: 'Impact Requirements',  required: false, hints: ['impact','impact requirements','impact req','requirements','criteria'] },
+    { key: 'permitDate',     label: 'Permit Date',          required: false, hints: ['permit date','permit','permit received date'] },
+    { key: 'ntpDate',        label: 'NTP Date',             required: false, hints: ['ntp','ntp date','notice to proceed','ntp received'] }
+  ],
+  existing: [
+    { key: 'projectName', label: 'Project Name', required: true, hints: ['project name','reactivate project name','project','name','site name'] }
+  ],
+  data_mapping:    [],
+  output_template: []
+};
+
+/* ================================================================
+   WIZARD NAVIGATION
+   ================================================================ */
+function renderWizardNav() {
+  var nav = document.getElementById('wizard-nav');
+  nav.innerHTML = '';
+  STEPS.forEach(function(s, idx) {
+    // Divider between steps
+    if (idx > 0) {
+      var div = document.createElement('span');
+      div.className = 'step-divider';
+      div.textContent = '›';
+      nav.appendChild(div);
+    }
+
+    var isActive    = s.num === APP.currentStep;
+    var isCompleted = APP.completedSteps.indexOf(s.num) !== -1;
+    var isLocked    = s.num > APP.currentStep && !isCompleted;
+
+    var btn = document.createElement('button');
+    btn.className  = 'wizard-step-btn' +
+                     (isActive    ? ' active'    : '') +
+                     (isCompleted && !isActive ? ' completed' : '');
+    btn.disabled   = isLocked;
+    btn.type       = 'button';
+
+    var numLabel = (isCompleted && !isActive) ? '✓' : String(s.num);
+    btn.innerHTML  = '<span class="step-num">' + numLabel + '</span>' + s.label;
+
+    if (!isLocked) {
+      btn.onclick = (function(n) {
+        return function() { goToStep(n); };
+      })(s.num);
+    }
+
+    nav.appendChild(btn);
+  });
+}
+
+function goToStep(n) {
+  // Validate n
+  if (n < 1 || n > 8) return;
+
+  // Hide all panels
+  var panels = document.querySelectorAll('.step-panel');
+  for (var i = 0; i < panels.length; i++) {
+    panels[i].classList.remove('active');
+  }
+
+  // Show target panel
+  var target = document.getElementById('step-' + n);
+  if (target) target.classList.add('active');
+
+  // Mark all prior steps completed
+  for (var j = 1; j < n; j++) {
+    if (APP.completedSteps.indexOf(j) === -1) {
+      APP.completedSteps.push(j);
+    }
+  }
+
+  APP.currentStep = n;
+  renderWizardNav();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Step-specific on-enter actions
+  if (n === 2 && APP.workbook) {
+    renderMappingUI();
+  }
+}
+
+/* ================================================================
+   STEP 1: UPLOAD
+   ================================================================ */
+function initUploadZone() {
+  var zone  = document.getElementById('drop-zone');
+  var input = document.getElementById('file-input');
+
+  // Drag events
+  zone.addEventListener('dragenter', function(e) { e.preventDefault(); });
+  zone.addEventListener('dragover',  function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', function()  { zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+  });
+
+  // Click on zone (not the button — button has its own onclick)
+  zone.addEventListener('click', function(e) {
+    if (e.target.tagName !== 'BUTTON') input.click();
+  });
+
+  // File input change
+  input.addEventListener('change', function() {
+    if (this.files.length > 0) handleFile(this.files[0]);
+  });
+}
+
+function handleFile(file) {
+  var nameLc = file.name.toLowerCase();
+  var isXlsx = nameLc.endsWith('.xlsx');
+  var isXls  = nameLc.endsWith('.xls');
+  var isCsv  = nameLc.endsWith('.csv');
+
+  if (!isXlsx && !isXls && !isCsv) {
+    alert('Please upload an .xlsx, .xls, or .csv file.');
+    return;
+  }
+
+  var MB50 = 52428800;
+  if (file.size > MB50) {
+    if (!confirm('This file is over 50 MB. Large files may be slow to parse. Continue?')) return;
+  }
+
+  showLoading('Parsing workbook…');
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = e.target.result;
+      var wb;
+      if (isCsv) {
+        wb = XLSX.read(data, { type: 'binary' });
+      } else {
+        wb = XLSX.read(data, { type: 'array' });
+      }
+      APP.workbook = wb;
+      APP.fileName = file.name;
+      parseAllSheets(wb);
+      hideLoading();
+      renderUploadResult();
+    } catch (err) {
+      hideLoading();
+      var msg = err.message || String(err);
+      if (msg.toLowerCase().indexOf('password') !== -1) {
+        alert('This file appears to be password-protected. Please remove the password before uploading.');
+      } else {
+        alert('Error reading file: ' + msg);
+      }
+    }
+  };
+
+  if (isCsv) {
+    reader.readAsBinaryString(file);
+  } else {
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function parseAllSheets(wb) {
+  APP.sheetData = {};
+  wb.SheetNames.forEach(function(name) {
+    var sheet = wb.Sheets[name];
+    var raw   = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+    // Drop rows that are entirely empty
+    var nonempty = raw.filter(function(row) {
+      return row.some(function(c) { return c !== '' && c !== null && c !== undefined; });
+    });
+
+    var headers  = nonempty.length > 0 ? nonempty[0] : [];
+    var dataRows = nonempty.slice(1);
+
+    APP.sheetData[name] = { headers: headers, rows: dataRows };
+  });
+}
+
+function renderUploadResult() {
+  var wb     = APP.workbook;
+  var sheets = wb.SheetNames;
+
+  // Switch visibility
+  document.getElementById('upload-area').style.display   = 'none';
+  document.getElementById('upload-result').style.display = 'block';
+
+  // Header bar
+  document.getElementById('result-filename').textContent =
+    APP.fileName;
+  document.getElementById('result-summary').textContent  =
+    'Detected ' + sheets.length + ' sheet' + (sheets.length !== 1 ? 's' : '');
+  document.getElementById('sheet-count-lbl').textContent =
+    sheets.length + ' tabs';
+
+  // Build sheet cards
+  var grid = document.getElementById('sheet-grid');
+  grid.innerHTML = '';
+
+  sheets.forEach(function(name) {
+    var sd      = APP.sheetData[name];
+    var headers = sd.headers;
+    var rows    = sd.rows;
+
+    var card = document.createElement('div');
+    card.className = 'sheet-card';
+
+    /* Header row */
+    var hdr = '<div class="sheet-card-header">' +
+      '<div class="sheet-name">📄 ' + esc(name) + '</div>' +
+      '<div class="sheet-stats">' +
+        '<div class="sheet-stat">' +
+          '<div class="sheet-stat-val">' + rows.length + '</div>' +
+          '<div class="sheet-stat-lbl">Rows</div>' +
+        '</div>' +
+        '<div class="sheet-stat">' +
+          '<div class="sheet-stat-val">' + headers.filter(function(h) { return h !== ''; }).length + '</div>' +
+          '<div class="sheet-stat-lbl">Cols</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+    /* Column tags (first 5) */
+    var realHeaders = headers.filter(function(h) { return h !== ''; });
+    var tagHtml = '<div class="col-tags">';
+    var showCols = realHeaders.slice(0, 5);
+    showCols.forEach(function(h) {
+      tagHtml += '<span class="col-tag">' + esc(String(h)) + '</span>';
+    });
+    if (realHeaders.length > 5) {
+      tagHtml += '<span class="col-tag col-tag-more">+' + (realHeaders.length - 5) + ' more</span>';
+    }
+    tagHtml += '</div>';
+
+    /* Sample rows (header + first 2 data rows, first 3 cols) */
+    var sampleHtml = '<div class="sample-table">';
+    var sCols = realHeaders.slice(0, 3);
+
+    sampleHtml += '<div class="sample-table-row">';
+    sCols.forEach(function(h) {
+      sampleHtml += '<span class="sample-cell hdr">' + esc(trunc(String(h), 16)) + '</span>';
+    });
+    sampleHtml += '</div>';
+
+    rows.slice(0, 2).forEach(function(row) {
+      sampleHtml += '<div class="sample-table-row">';
+      for (var ci = 0; ci < 3; ci++) {
+        var val = (row[ci] !== undefined && row[ci] !== null) ? String(row[ci]) : '';
+        sampleHtml += '<span class="sample-cell">' + esc(trunc(val, 20)) + '</span>';
+      }
+      sampleHtml += '</div>';
+    });
+    sampleHtml += '</div>';
+
+    card.innerHTML = hdr +
+      '<div class="sheet-card-body">' + tagHtml + sampleHtml + '</div>';
+
+    grid.appendChild(card);
+  });
+
+  // Enable next button
+  document.getElementById('step1-next').disabled = false;
+}
+
+function resetUpload() {
+  APP.workbook    = null;
+  APP.fileName    = '';
+  APP.sheetData   = {};
+  APP.tabMappings = {};
+
+  document.getElementById('upload-area').style.display   = 'block';
+  document.getElementById('upload-result').style.display = 'none';
+  document.getElementById('file-input').value            = '';
+  document.getElementById('step1-next').disabled         = true;
+}
+
+/* ================================================================
+   STEP 2: MAPPING
+   ================================================================ */
+function renderMappingUI() {
+  if (!APP.workbook) return;
+
+  var stack  = document.getElementById('mapping-stack');
+  stack.innerHTML = '';
+
+  APP.workbook.SheetNames.forEach(function(sheetName) {
+    var sd       = APP.sheetData[sheetName] || { headers: [], rows: [] };
+    var headers  = sd.headers.filter(function(h) { return h !== '' && h !== null && h !== undefined; });
+    var rowCount = sd.rows.length;
+
+    // Initialize mapping state for this sheet if missing
+    if (!APP.tabMappings[sheetName]) {
+      APP.tabMappings[sheetName] = { role: '', columns: {} };
+    }
+
+    var safeId    = safeDomId(sheetName);
+    var curRole   = APP.tabMappings[sheetName].role || '';
+
+    /* Build role <select> */
+    var roleOpts = TAB_ROLES.map(function(r) {
+      return '<option value="' + r.value + '"' +
+             (curRole === r.value ? ' selected' : '') + '>' +
+             r.label + '</option>';
+    }).join('');
+
+    var card = document.createElement('div');
+    card.id        = 'mcard-' + safeId;
+    card.className = 'mapping-card' +
+      (curRole && curRole !== 'skip' ? ' assigned' : '') +
+      (curRole === 'skip' ? ' skipped' : '');
+
+    card.innerHTML =
+      '<div class="mapping-card-header">' +
+        '<div class="mcard-name">📄 ' + esc(sheetName) + '</div>' +
+        '<div class="mcard-meta">' + rowCount + ' rows · ' + headers.length + ' cols</div>' +
+        '<select class="role-select" ' +
+          'onchange="onRoleChange(' + JSON.stringify(sheetName) + ', this.value)">' +
+          roleOpts +
+        '</select>' +
+      '</div>' +
+      '<div class="col-map-grid' + (curRole && curRole !== 'skip' ? ' visible' : '') + '" ' +
+           'id="colmap-' + safeId + '"></div>';
+
+    stack.appendChild(card);
+
+    // Populate column fields if a role was already set
+    if (curRole && curRole !== 'skip') {
+      buildColumnFields(sheetName, curRole);
+    }
+  });
+
+  validateMappings();
+}
+
+function onRoleChange(sheetName, role) {
+  if (!APP.tabMappings[sheetName]) APP.tabMappings[sheetName] = { role: '', columns: {} };
+  APP.tabMappings[sheetName].role    = role;
+  APP.tabMappings[sheetName].columns = {};
+
+  var safeId = safeDomId(sheetName);
+  var card   = document.getElementById('mcard-' + safeId);
+  if (card) {
+    card.className = 'mapping-card' +
+      (role && role !== 'skip' ? ' assigned' : '') +
+      (role === 'skip' ? ' skipped' : '');
+  }
+
+  var colGrid = document.getElementById('colmap-' + safeId);
+  if (colGrid) {
+    colGrid.innerHTML = '';
+    colGrid.className = 'col-map-grid';
+  }
+
+  if (role && role !== 'skip' && ROLE_FIELDS[role] && ROLE_FIELDS[role].length > 0) {
+    buildColumnFields(sheetName, role);
+  }
+
+  validateMappings();
+}
+
+function buildColumnFields(sheetName, role) {
+  var fields  = ROLE_FIELDS[role] || [];
+  if (fields.length === 0) return;
+
+  var safeId  = safeDomId(sheetName);
+  var colGrid = document.getElementById('colmap-' + safeId);
+  if (!colGrid) return;
+
+  colGrid.className = 'col-map-grid visible';
+  colGrid.innerHTML = '';
+
+  var sd      = APP.sheetData[sheetName] || { headers: [], rows: [] };
+  var headers = sd.headers.filter(function(h) { return h !== '' && h !== null && h !== undefined; });
+
+  fields.forEach(function(field) {
+    var autoMatch = findBestMatch(headers, field.hints);
+
+    // Store auto-detected value if not already set
+    var saved = (APP.tabMappings[sheetName].columns || {})[field.key];
+    if (!saved && autoMatch) {
+      if (!APP.tabMappings[sheetName].columns) APP.tabMappings[sheetName].columns = {};
+      APP.tabMappings[sheetName].columns[field.key] = autoMatch;
+    }
+
+    var effectiveVal = (APP.tabMappings[sheetName].columns || {})[field.key] || '';
+
+    /* Build <select> options */
+    var opts = '<option value="">— Select Column —</option>';
+    headers.forEach(function(h) {
+      var hStr = String(h);
+      opts += '<option value="' + esc(hStr) + '"' +
+              (effectiveVal === hStr ? ' selected' : '') + '>' +
+              esc(hStr) + '</option>';
+    });
+
+    var autoHintHtml = effectiveVal
+      ? '<div class="auto-hint">✓ ' + (saved ? 'Mapped' : 'Auto-detected') + ': ' + esc(effectiveVal) + '</div>'
+      : '';
+
+    var fieldEl = document.createElement('div');
+    fieldEl.className = 'col-map-field';
+    fieldEl.innerHTML =
+      '<label class="col-map-label' + (field.required ? ' required' : '') + '">' +
+        esc(field.label) +
+      '</label>' +
+      '<select class="col-select" ' +
+        'onchange="onColMapped(' + JSON.stringify(sheetName) + ',' + JSON.stringify(field.key) + ', this.value)">' +
+        opts +
+      '</select>' +
+      autoHintHtml;
+
+    colGrid.appendChild(fieldEl);
+  });
+}
+
+function onColMapped(sheetName, fieldKey, value) {
+  if (!APP.tabMappings[sheetName]) APP.tabMappings[sheetName] = { role: '', columns: {} };
+  if (!APP.tabMappings[sheetName].columns) APP.tabMappings[sheetName].columns = {};
+  APP.tabMappings[sheetName].columns[fieldKey] = value;
+  validateMappings();
+}
+
+function findBestMatch(headers, hints) {
+  // 1. Exact match (case-insensitive, trimmed)
+  for (var hi = 0; hi < hints.length; hi++) {
+    for (var ci = 0; ci < headers.length; ci++) {
+      var h = String(headers[ci]).toLowerCase().trim();
+      if (h === hints[hi].toLowerCase()) return String(headers[ci]);
+    }
+  }
+  // 2. Substring containment (header contains hint)
+  for (var hi = 0; hi < hints.length; hi++) {
+    for (var ci = 0; ci < headers.length; ci++) {
+      var h = String(headers[ci]).toLowerCase().trim();
+      if (h.indexOf(hints[hi].toLowerCase()) !== -1) return String(headers[ci]);
+    }
+  }
+  // 3. Hint contains header (e.g. header "name" matches hint "project name")
+  for (var hi = 0; hi < hints.length; hi++) {
+    for (var ci = 0; ci < headers.length; ci++) {
+      var h = String(headers[ci]).toLowerCase().trim();
+      if (h.length >= 3 && hints[hi].toLowerCase().indexOf(h) !== -1) return String(headers[ci]);
+    }
+  }
+  return null;
+}
+
+function validateMappings() {
+  var hasIndex          = false;
+  var indexHasNameCol   = false;
+
+  Object.keys(APP.tabMappings).forEach(function(sn) {
+    var m = APP.tabMappings[sn];
+    if (m.role === 'index') {
+      hasIndex = true;
+      if (m.columns && m.columns.projectName) indexHasNameCol = true;
+    }
+  });
+
+  var btn  = document.getElementById('step2-next');
+  var hint = document.getElementById('map-validation-hint');
+
+  if (!hasIndex) {
+    hint.textContent    = 'Assign at least one tab as Project Index to continue';
+    btn.disabled        = true;
+  } else if (!indexHasNameCol) {
+    hint.textContent    = 'Map the Project Name column on the Project Index tab';
+    btn.disabled        = true;
+  } else {
+    hint.textContent    = '';
+    btn.disabled        = false;
+  }
+}
+
+/* ================================================================
+   UTILITIES
+   ================================================================ */
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function trunc(s, n) {
+  if (!s) return '';
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+function safeDomId(s) {
+  return String(s).replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+function showLoading(msg) {
+  var overlay = document.getElementById('loading-overlay');
+  var label   = document.getElementById('loading-msg');
+  if (label)   label.textContent = msg || 'Processing…';
+  if (overlay) overlay.classList.add('show');
+}
+
+function hideLoading() {
+  var overlay = document.getElementById('loading-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+document.addEventListener('DOMContentLoaded', function() {
+  renderWizardNav();
+  initUploadZone();
+});
+</script>
+</body>
+</html>
