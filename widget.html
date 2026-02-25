@@ -1,0 +1,71 @@
+<!-- ============================================================
+  WISH & GRATEFUL — StreamElements Overlay Widget
+  Paste the contents of this file into the SE Custom Widget HTML tab.
+  ============================================================ -->
+
+<div id="widget-root">
+
+  <!-- ======================================================
+       STAR CHART LAYER  (!wish)
+       ====================================================== -->
+  <div id="star-chart-layer">
+
+    <!-- Background star field + user wish-star rendering -->
+    <canvas id="star-canvas"></canvas>
+
+    <!-- Constellation lines, star labels, name plates -->
+    <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <!-- Parchment popup – appears centre-screen on each !wish -->
+    <div id="wish-parchment">
+      <div class="parchment-inner">
+        <div class="parchment-deco">✦ ✧ ✦ ✧ ✦</div>
+        <div class="parchment-username"></div>
+        <div class="parchment-subline">wishes upon the stars…</div>
+        <div class="parchment-text"></div>
+        <div class="parchment-deco bottom-deco">✦ ✧ ✦ ✧ ✦</div>
+      </div>
+      <!-- Four corner ornaments via pseudo-elements in CSS -->
+    </div>
+
+  </div>
+
+  <!-- ======================================================
+       GRATEFUL SCROLL LAYER  (!grateful)
+       ====================================================== -->
+  <div id="grateful-scroll">
+
+    <!-- Top roller rod -->
+    <div class="scroll-roller scroll-roller-top">
+      <div class="roller-cap"></div>
+      <div class="roller-body"></div>
+      <div class="roller-cap"></div>
+    </div>
+
+    <!-- Parchment paper surface -->
+    <div class="scroll-paper">
+      <div class="scroll-header">
+        <span class="scroll-header-text">✿ &nbsp; A Garden of Gratitude &nbsp; ✿</span>
+      </div>
+
+      <!-- Procedurally-grown Japanese garden scene -->
+      <svg id="garden-svg" xmlns="http://www.w3.org/2000/svg"
+           preserveAspectRatio="xMidYMid meet"></svg>
+
+      <!-- Live entry card shown while scroll is open -->
+      <div class="scroll-entry-card">
+        <span class="entry-username"></span>
+        <span class="entry-text"></span>
+      </div>
+    </div>
+
+    <!-- Bottom roller rod -->
+    <div class="scroll-roller scroll-roller-bottom">
+      <div class="roller-cap"></div>
+      <div class="roller-body"></div>
+      <div class="roller-cap"></div>
+    </div>
+
+  </div>
+
+</div>

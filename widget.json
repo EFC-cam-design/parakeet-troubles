@@ -1,0 +1,233 @@
+[
+  {
+    "type": "dropdown",
+    "label": "Persistence Mode",
+    "id": "persistenceMode",
+    "value": "session",
+    "options": {
+      "session":    "Session Only — resets each stream",
+      "persistent": "Persistent — saves across streams (SE KV Store)"
+    }
+  },
+  {
+    "type": "dropdown",
+    "label": "Trigger Type",
+    "id": "triggerType",
+    "value": "both",
+    "options": {
+      "both":         "Both — chat commands AND channel points",
+      "commands":     "Chat Commands only",
+      "channelpoints":"Channel Point Redemptions only"
+    }
+  },
+
+  {
+    "type": "text",
+    "label": "Wish Chat Command (e.g. !wish)",
+    "id": "wishCommand",
+    "value": "!wish"
+  },
+  {
+    "type": "text",
+    "label": "Grateful Chat Command (e.g. !grateful)",
+    "id": "gratefulCommand",
+    "value": "!grateful"
+  },
+  {
+    "type": "text",
+    "label": "Wish Redemption Name (partial match, case-insensitive)",
+    "id": "wishRedemptionName",
+    "value": "wish"
+  },
+  {
+    "type": "text",
+    "label": "Grateful Redemption Name (partial match, case-insensitive)",
+    "id": "gratefulRedemptionName",
+    "value": "grateful"
+  },
+
+  {
+    "type": "number",
+    "label": "Max Stars on Chart (oldest fade when cap reached)",
+    "id": "maxStars",
+    "value": 50,
+    "min": 10,
+    "max": 200
+  },
+  {
+    "type": "number",
+    "label": "Wish Display Duration (seconds — how long parchment stays open)",
+    "id": "wishDuration",
+    "value": 6,
+    "min": 3,
+    "max": 30
+  },
+  {
+    "type": "number",
+    "label": "Grateful Display Duration (seconds — how long scroll stays open)",
+    "id": "gratefulDuration",
+    "value": 8,
+    "min": 3,
+    "max": 30
+  },
+  {
+    "type": "number",
+    "label": "Animation Speed Multiplier (0.5 = slow, 1 = normal, 2 = fast)",
+    "id": "animSpeed",
+    "value": 1,
+    "min": 0.25,
+    "max": 3,
+    "step": 0.25
+  },
+
+  {
+    "type": "colorpicker",
+    "label": "Star Chart — Background Colour",
+    "id": "chartBgColor",
+    "value": "#0a0a2e"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Star Chart — Star Colour",
+    "id": "starColor",
+    "value": "#ffffff"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Star Chart — Star Glow / Halo Colour",
+    "id": "starGlowColor",
+    "value": "#88aaff"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Star Chart — Constellation Line Colour",
+    "id": "constellationColor",
+    "value": "#4466aa"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Parchment — Background Colour",
+    "id": "parchmentBgColor",
+    "value": "#0d0d2b"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Parchment — Text Colour",
+    "id": "parchmentTextColor",
+    "value": "#d4af37"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Scroll — Paper Colour",
+    "id": "scrollPaperColor",
+    "value": "#f4e8c1"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Scroll — Ink / Line Colour",
+    "id": "scrollInkColor",
+    "value": "#1a0a00"
+  },
+  {
+    "type": "colorpicker",
+    "label": "Scroll — Blossom Petal Colour",
+    "id": "blossomColor",
+    "value": "#ffb7c5"
+  },
+
+  {
+    "type": "dropdown",
+    "label": "Star Shape",
+    "id": "starShape",
+    "value": "star",
+    "options": {
+      "star":    "Classic 5-Point Star",
+      "circle":  "Glowing Circle",
+      "sparkle": "Sparkle / Cross"
+    }
+  },
+  {
+    "type": "dropdown",
+    "label": "Nebula Background Effect",
+    "id": "nebulaEffect",
+    "value": "subtle",
+    "options": {
+      "none":    "None — pure dark sky",
+      "subtle":  "Subtle — soft purple/blue clouds",
+      "vibrant": "Vibrant — rich nebula colours"
+    }
+  },
+  {
+    "type": "number",
+    "label": "Background Star Count",
+    "id": "bgStarCount",
+    "value": 200,
+    "min": 50,
+    "max": 600
+  },
+
+  {
+    "type": "text",
+    "label": "Font Name (Google Fonts — e.g. Cinzel, Cormorant Garamond, or 'default')",
+    "id": "fontName",
+    "value": "Cinzel"
+  },
+
+  {
+    "type": "dropdown",
+    "label": "Scroll Position",
+    "id": "scrollPosition",
+    "value": "top-center",
+    "options": {
+      "top-center": "Top Centre",
+      "top-left":   "Top Left",
+      "top-right":  "Top Right"
+    }
+  },
+  {
+    "type": "number",
+    "label": "Scroll Width (px)",
+    "id": "scrollWidth",
+    "value": 600,
+    "min": 300,
+    "max": 1200
+  },
+
+  {
+    "type": "checkbox",
+    "label": "Show Username Labels on Stars",
+    "id": "showUsernames",
+    "value": true
+  },
+  {
+    "type": "checkbox",
+    "label": "Show Constellation Group Names",
+    "id": "showConstNames",
+    "value": true
+  },
+  {
+    "type": "checkbox",
+    "label": "Show Wish Text on Star Hover (tooltip)",
+    "id": "showTooltip",
+    "value": true
+  },
+
+  {
+    "type": "checkbox",
+    "label": "Enable Sound Effects",
+    "id": "enableSound",
+    "value": false
+  },
+  {
+    "type": "text",
+    "label": "Wish Sound — URL (.mp3 / .ogg)",
+    "id": "wishSoundUrl",
+    "value": ""
+  },
+  {
+    "type": "text",
+    "label": "Grateful Sound — URL (.mp3 / .ogg)",
+    "id": "gratefulSoundUrl",
+    "value": ""
+  }
+]
