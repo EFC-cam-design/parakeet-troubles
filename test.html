@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wish & Grateful — Local Test Harness</title>
+
+  <!-- ── Inline widget CSS ── -->
+  <link rel="stylesheet" href="widget.css">
+
+  <!-- Test panel styles (not part of the widget) -->
+  <style>
+    #test-panel {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 9999;
+      background: rgba(10, 10, 30, 0.92);
+      border: 1px solid rgba(136, 170, 255, 0.35);
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #ccd;
+      width: 310px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+    #test-panel h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #88aaff;
+      letter-spacing: 1px;
+    }
+    #test-panel label { display: block; margin-bottom: 3px; color: #99a; font-size: 11px; }
+    #test-panel input[type=text] {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(136,170,255,0.25);
+      border-radius: 3px;
+      color: #eef;
+      padding: 5px 8px;
+      font-size: 12px;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+    #test-panel button {
+      width: 100%;
+      padding: 7px 0;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .btn-wish    { background: #2a2060; color: #d4af37; border: 1px solid #4433aa; }
+    .btn-grateful{ background: #1a2a10; color: #8fbc5a; border: 1px solid #3a6020; }
+    .btn-wish:hover     { background: #3a30a0; }
+    .btn-grateful:hover { background: #2a4a18; }
+    #test-log {
+      margin-top: 8px;
+      max-height: 80px;
+      overflow-y: auto;
+      font-size: 10px;
+      color: #667;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 6px;
+    }
+    #test-log div { margin-bottom: 2px; }
+    #test-log .log-wish     { color: #8878dd; }
+    #test-log .log-grateful { color: #6a9a40; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Widget HTML (identical to widget.html body) ── -->
+  <div id="widget-root">
+    <div id="star-chart-layer">
+      <canvas id="star-canvas"></canvas>
+      <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="wish-parchment">
+        <div class="parchment-inner">
+          <div class="parchment-deco">✦ ✧ ✦ ✧ ✦</div>
+          <div class="parchment-username"></div>
+          <div class="parchment-subline">wishes upon the stars…</div>
+          <div class="parchment-text"></div>
+          <div class="parchment-deco bottom-deco">✦ ✧ ✦ ✧ ✦</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="grateful-scroll">
+      <div class="scroll-roller scroll-roller-top">
+        <div class="roller-cap"></div>
+        <div class="roller-body"></div>
+        <div class="roller-cap"></div>
+      </div>
+      <div class="scroll-paper">
+        <div class="scroll-header">
+          <span class="scroll-header-text">✿ &nbsp; A Garden of Gratitude &nbsp; ✿</span>
+        </div>
+        <svg id="garden-svg" xmlns="http://www.w3.org/2000/svg"
+             preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="scroll-entry-card">
+          <span class="entry-username"></span>
+          <span class="entry-text"></span>
+        </div>
+      </div>
+      <div class="scroll-roller scroll-roller-bottom">
+        <div class="roller-cap"></div>
+        <div class="roller-body"></div>
+        <div class="roller-cap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── StreamElements API mock ── -->
+  <script>
+    // Minimal SE_API stub so widget.js doesn't throw
+    window.SE_API = {
+      store: {
+        _data: {},
+        get: function(key) {
+          return Promise.resolve(this._data[key] || null);
+        },
+        set: function(key, value) {
+          this._data[key] = value;
+          return Promise.resolve();
+        }
+      }
+    };
+
+    // Dispatch helpers used by the test panel
+    function seWidgetLoad(fields) {
+      window.dispatchEvent(new CustomEvent('onWidgetLoad', {
+        detail: { fieldData: fields }
+      }));
+    }
+
+    function seChat(username, text) {
+      window.dispatchEvent(new CustomEvent('onEventReceived', {
+        detail: {
+          listener: 'message',
+          event: { nick: username, username: username, text: text }
+        }
+      }));
+    }
+  </script>
+
+  <!-- ── Widget JavaScript ── -->
+  <script src="widget.js"></script>
+
+  <!-- ── Bootstrap with default field values ── -->
+  <script>
+    seWidgetLoad({
+      persistenceMode:        'session',
+      triggerType:            'commands',
+      wishCommand:            '!wish',
+      gratefulCommand:        '!grateful',
+      maxStars:               50,
+      wishDuration:           6,
+      gratefulDuration:       8,
+      animSpeed:              1,
+      chartBgColor:           '#0a0a2e',
+      starColor:              '#ffffff',
+      starGlowColor:          '#88aaff',
+      constellationColor:     '#4466aa',
+      parchmentBgColor:       '#0d0d2b',
+      parchmentTextColor:     '#d4af37',
+      scrollPaperColor:       '#f4e8c1',
+      scrollInkColor:         '#1a0a00',
+      blossomColor:           '#ffb7c5',
+      starShape:              'star',
+      nebulaEffect:           'subtle',
+      bgStarCount:            200,
+      fontName:               'Cinzel',
+      scrollPosition:         'top-center',
+      scrollWidth:            600,
+      showUsernames:          true,
+      showConstNames:         true,
+      showTooltip:            true,
+      enableSound:            false,
+      wishSoundUrl:           '',
+      gratefulSoundUrl:       '',
+    });
+  </script>
+
+  <!-- ── Test Panel UI ── -->
+  <div id="test-panel">
+    <h3>▶ Test Panel</h3>
+
+    <label>Username</label>
+    <input type="text" id="tp-user" value="StargazerSam">
+
+    <label>Message text</label>
+    <input type="text" id="tp-msg" value="I want to build something beautiful">
+
+    <button class="btn-wish" onclick="fireWish()">✦ Fire !wish</button>
+    <button class="btn-grateful" onclick="fireGrateful()">✿ Fire !grateful</button>
+
+    <div id="test-log"></div>
+  </div>
+
+  <script>
+    function fireWish() {
+      const user = document.getElementById('tp-user').value.trim() || 'Viewer';
+      const msg  = document.getElementById('tp-msg').value.trim() || 'a silent wish';
+      seChat(user, '!wish ' + msg);
+      log('wish', user + ': ' + msg);
+    }
+
+    function fireGrateful() {
+      const user = document.getElementById('tp-user').value.trim() || 'Viewer';
+      const msg  = document.getElementById('tp-msg').value.trim() || 'grateful for everything';
+      seChat(user, '!grateful ' + msg);
+      log('grateful', user + ': ' + msg);
+    }
+
+    function log(type, text) {
+      const el  = document.getElementById('test-log');
+      const row = document.createElement('div');
+      row.className = 'log-' + type;
+      row.textContent = '[' + new Date().toLocaleTimeString() + '] ' + text;
+      el.insertBefore(row, el.firstChild);
+    }
+
+    // Allow Enter key to fire based on last-used button
+    document.getElementById('tp-msg').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') fireWish();
+    });
+  </script>
+
+</body>
+</html>
