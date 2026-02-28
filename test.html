@@ -4,8 +4,56 @@
   <meta charset="UTF-8">
   <title>Wish & Grateful — Local Test Harness</title>
 
-  <!-- ── Inline widget CSS ── -->
-  <link rel="stylesheet" href="widget.css">
+  <!-- ── Widget CSS (inlined so test.html works without a server) ── -->
+  <style>
+:root{--chart-bg:#0a0a2e;--star-color:#ffffff;--star-glow:#88aaff;--constellation:#4466aa;--parchment-bg:#0d0d2b;--parchment-text:#d4af37;--scroll-paper:#f4e8c1;--scroll-ink:#1a0a00;--blossom:#ffb7c5;--font-family:'Cinzel',serif;--scroll-width:600px;--open-dur:0.8s;--close-dur:0.65s;--parchment-open-dur:0.5s;--parchment-close-dur:0.45s}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{width:100vw;height:100vh;overflow:hidden;background:#0a0a2e;font-family:var(--font-family)}
+#widget-root{position:fixed;inset:0;pointer-events:none}
+#star-chart-layer{position:absolute;inset:0}
+#star-canvas{position:absolute;inset:0;width:100%;height:100%}
+#svg-layer{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.constellation-line{stroke:var(--constellation);stroke-width:1px;stroke-dasharray:4 6;opacity:0;animation:fadeInLine 1.8s ease forwards}
+@keyframes fadeInLine{to{opacity:.45}}
+.constellation-label{font-family:var(--font-family);font-size:10px;fill:var(--constellation);letter-spacing:3px;text-transform:uppercase;opacity:0;animation:fadeInLine 2.5s ease forwards}
+.star-name{font-family:var(--font-family);font-size:12px;fill:var(--star-color);opacity:0;transition:opacity .6s ease;pointer-events:none}
+.star-name.visible{opacity:.85}
+#wish-parchment{position:absolute;top:50%;left:50%;width:min(460px,88vw);transform:translate(-50%,-50%) scaleY(0);transform-origin:top center;opacity:0;background:var(--parchment-bg);border:1px solid rgba(212,175,55,.55);border-radius:3px;padding:32px 40px;text-align:center;z-index:100;box-shadow:0 0 50px rgba(136,170,255,.22),0 0 100px rgba(90,50,160,.18),inset 0 0 40px rgba(0,0,30,.6);transition:transform var(--parchment-open-dur) cubic-bezier(.34,1.56,.64,1),opacity var(--parchment-open-dur) ease}
+#wish-parchment::before,#wish-parchment::after{content:'✦';position:absolute;font-size:16px;color:rgba(212,175,55,.45);line-height:1}
+#wish-parchment::before{top:10px;left:14px}
+#wish-parchment::after{top:10px;right:14px}
+.parchment-inner::before,.parchment-inner::after{content:'✦';position:absolute;font-size:16px;color:rgba(212,175,55,.45);line-height:1}
+.parchment-inner::before{bottom:10px;left:14px}
+.parchment-inner::after{bottom:10px;right:14px}
+#wish-parchment.parchment-open{transform:translate(-50%,-50%) scaleY(1);opacity:1}
+#wish-parchment.parchment-close{transform:translate(-50%,-58%) scaleY(0);opacity:0;transition:transform var(--parchment-close-dur) cubic-bezier(.55,0,1,.45),opacity var(--parchment-close-dur) ease-in}
+.parchment-inner{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px}
+.parchment-deco{color:rgba(212,175,55,.4);font-size:11px;letter-spacing:6px}
+.parchment-username{font-family:var(--font-family);font-size:22px;font-weight:700;color:var(--parchment-text);text-shadow:0 0 14px rgba(212,175,55,.55);letter-spacing:1px;word-break:break-word}
+.parchment-subline{font-size:10px;color:rgba(212,175,55,.45);letter-spacing:3px;text-transform:uppercase}
+.parchment-text{font-size:16px;font-style:italic;color:rgba(225,215,185,.93);line-height:1.65;max-width:360px;word-break:break-word}
+#grateful-scroll{position:absolute;top:0;left:50%;width:var(--scroll-width);transform:translateX(-50%) translateY(calc(-100% - 40px));z-index:90;display:flex;flex-direction:column;filter:drop-shadow(0 10px 28px rgba(0,0,0,.45));transition:transform var(--open-dur) cubic-bezier(.34,1.2,.64,1)}
+#grateful-scroll.scroll-open{transform:translateX(-50%) translateY(0)}
+#grateful-scroll.scroll-close{transform:translateX(-50%) translateY(calc(-100% - 40px));transition:transform var(--close-dur) cubic-bezier(.55,0,1,.45)}
+.scroll-roller{display:flex;align-items:center;height:34px;width:100%;position:relative;z-index:2}
+.roller-body{flex:1;height:34px;background:linear-gradient(180deg,#6b3f1e 0%,#b07040 20%,#d9a06a 45%,#b07040 65%,#6b3f1e 100%);border-radius:3px;box-shadow:0 2px 10px rgba(0,0,0,.5),inset 0 1px 3px rgba(255,215,160,.4)}
+.roller-cap{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 38% 33%,#d9a06a,#8B5E3C 55%,#4a2c10);border:2px solid #3a1c08;box-shadow:2px 2px 8px rgba(0,0,0,.55);flex-shrink:0}
+.scroll-paper{background:var(--scroll-paper);padding:14px 18px 18px;display:flex;flex-direction:column;gap:10px;background-image:repeating-linear-gradient(0deg,transparent,transparent 29px,rgba(160,130,90,.12) 29px,rgba(160,130,90,.12) 30px),radial-gradient(ellipse at center,transparent 55%,rgba(140,110,60,.18) 100%);position:relative;z-index:1}
+.scroll-header{text-align:center;padding-bottom:8px;border-bottom:1px solid rgba(90,60,20,.25)}
+.scroll-header-text{font-family:var(--font-family);font-size:13px;color:var(--scroll-ink);letter-spacing:2px;opacity:.75}
+#garden-svg{width:100%;min-height:260px}
+.scroll-entry-card{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:52px;padding:8px 14px;background:rgba(140,110,60,.08);border:1px solid rgba(90,60,20,.18);border-radius:2px;justify-content:center}
+.entry-username{font-family:var(--font-family);font-size:14px;font-weight:700;color:var(--scroll-ink);letter-spacing:1px}
+.entry-text{font-family:var(--font-family);font-size:13px;font-style:italic;color:rgba(30,20,0,.75);line-height:1.45;text-align:center;word-break:break-word}
+.garden-label{font-family:var(--font-family);font-size:8.5px;fill:var(--scroll-ink);opacity:.55;text-anchor:middle;pointer-events:none}
+.garden-element{transform-box:fill-box;transform-origin:center bottom}
+.garden-element.new-entry{animation:gardenAppear 1.4s cubic-bezier(.34,1.4,.64,1) forwards}
+@keyframes gardenAppear{0%{opacity:0;transform:scale(.4) translateY(8px)}65%{opacity:1;transform:scale(1.08) translateY(-2px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+#grateful-scroll.pos-top-left{left:20px;transform:translateX(0) translateY(calc(-100% - 40px))}
+#grateful-scroll.pos-top-left.scroll-open{transform:translateX(0) translateY(0)}
+#grateful-scroll.pos-top-right{left:auto;right:20px;transform:translateX(0) translateY(calc(-100% - 40px))}
+#grateful-scroll.pos-top-right.scroll-open{transform:translateX(0) translateY(0)}
+  </style>
 
   <!-- Test panel styles (not part of the widget) -->
   <style>
@@ -72,6 +120,16 @@
   </style>
 </head>
 <body>
+
+  <!-- Error display (hidden unless JS throws) -->
+  <div id="err-box" style="display:none;position:fixed;top:10px;left:10px;right:10px;z-index:99999;background:#400;color:#fcc;font:13px monospace;padding:12px;border-radius:4px;border:1px solid #f44;"></div>
+  <script>
+    window.onerror = function(msg, src, line) {
+      var b = document.getElementById('err-box');
+      b.style.display = 'block';
+      b.textContent = 'JS ERROR: ' + msg + ' (' + (src||'').split('/').pop() + ':' + line + ')';
+    };
+  </script>
 
   <!-- ── Widget HTML (identical to widget.html body) ── -->
   <div id="widget-root">
